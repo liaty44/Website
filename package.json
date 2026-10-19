@@ -1,0 +1,20 @@
+{
+  "name": "vorstyafk-panel",
+  "version": "1.0.0",
+  "description": "VorstyAFK Bot Hosting Panel",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@octokit/app": "^15.1.1",
+    "connect-pg-simple": "^10.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.1.0",
+    "express-session": "^1.18.1",
+    "pg": "^8.13.1"
+  }
+}
