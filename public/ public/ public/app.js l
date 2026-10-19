@@ -1,0 +1,330 @@
+const $ = (id) => document.getElementById(id);
+
+const state = {
+  user: null,
+  bots: []
+};
+
+async function api(url, options = {}) {
+  const response = await fetch(url, {
+    credentials: "same-origin",
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      showLoggedOut();
+    }
+    throw new Error(data.error || `Request failed (${response.status})`);
+  }
+
+  return data;
+}
+
+function notify(message) {
+  const notice = $("notice");
+  notice.textContent = message;
+  notice.classList.remove("hidden");
+
+  clearTimeout(notify.timer);
+  notify.timer = setTimeout(() => {
+    notice.classList.add("hidden");
+  }, 4000);
+}
+
+function setBusy(button, busy, label = "Please wait...") {
+  if (!button) return;
+
+  if (busy) {
+    button.dataset.originalText = button.textContent;
+    button.textContent = label;
+    button.disabled = true;
+  } else {
+    button.textContent =
+      button.dataset.originalText || button.textContent;
+    button.disabled = false;
+  }
+}
+
+function showLoggedOut() {
+  state.user = null;
+
+  $("loginBtn").classList.remove("hidden");
+  $("heroLogin").classList.remove("hidden");
+  $("logoutBtn").classList.add("hidden");
+  $("dashboard").classList.add("hidden");
+  $("createPanel").classList.add("hidden");
+  $("botsGrid").replaceChildren();
+  $("emptyState").classList.remove("hidden");
+  $("botCount").textContent = "0 / 4";
+}
+
+function showLoggedIn(user) {
+  state.user = user;
+
+  $("loginBtn").classList.add("hidden");
+  $("heroLogin").classList.add("hidden");
+  $("logoutBtn").classList.remove("hidden");
+  $("dashboard").classList.remove("hidden");
+  $("welcomeText").textContent =
+    `Welcome back, @${user.username}. Your services are ready to manage.`;
+  $("accountName").textContent = `@${user.username}`;
+}
+
+function openCreatePanel() {
+  $("createPanel").classList.remove("hidden");
+  $("createPanel").scrollIntoView({
+    behavior: "smooth",
+    block: "center"
+  });
+
+  loadRepos();
+}
+
+async function loadRepos() {
+  const select = $("repoSelect");
+  select.replaceChildren(new Option("Loading repositories...", ""));
+
+  try {
+    const data = await api("/api/repos");
+
+    select.replaceChildren();
+
+    if (!data.repos || data.repos.length === 0) {
+      select.add(new Option("No repositories found", ""));
+      return;
+    }
+
+    select.add(new Option("Choose a repository...", ""));
+
+    for (const repo of data.repos) {
+      const privacy = repo.private ? "Private" : "Public";
+      const option = new Option(
+        `${repo.name} · ${privacy}`,
+        repo.name
+      );
+
+      option.dataset.branch = repo.branch || "main";
+      select.add(option);
+    }
+
+    select.addEventListener("change", () => {
+      const option = select.selectedOptions[0];
+      if (option && option.dataset.branch) {
+        $("branchInput").value = option.dataset.branch;
+      }
+    });
+  } catch (error) {
+    select.replaceChildren(
+      new Option("Could not load repositories", "")
+    );
+    notify(error.message);
+  }
+}
+
+async function loadBots() {
+  const data = await api("/api/bots");
+  state.bots = data.bots || [];
+
+  $("botCount").textContent = `${state.bots.length} / 4`;
+  $("createBtn").disabled = state.bots.length >= 4;
+  $("emptyCreateBtn").disabled = state.bots.length >= 4;
+
+  renderBots();
+}
+
+function renderBots() {
+  const grid = $("botsGrid");
+  grid.replaceChildren();
+
+  $("emptyState").classList.toggle(
+    "hidden",
+    state.bots.length > 0
+  );
+
+  for (const bot of state.bots) {
+    const card = document.createElement("article");
+    card.className = "bot-card";
+
+    const top = document.createElement("div");
+    top.className = "bot-top";
+
+    const info = document.createElement("div");
+
+    const title = document.createElement("h3");
+    title.className = "bot-name";
+    title.textContent = bot.repo_name || "Minecraft AFK Bot";
+
+    const repo = document.createElement("div");
+    repo.className = "repo-name";
+    repo.textContent = `Service ID: ${bot.render_service_id}`;
+
+    info.append(title, repo);
+
+    const status = document.createElement("span");
+    status.className = "bot-status";
+    status.textContent = "Service";
+
+    top.append(info, status);
+
+    const actions = document.createElement("div");
+    actions.className = "bot-actions";
+
+    const controls = [
+      ["Start", "start"],
+      ["Stop", "stop"],
+      ["Restart", "restart"],
+      ["Redeploy", "deploy"]
+    ];
+
+    for (const [label, action] of controls) {
+      const button = document.createElement("button");
+      button.className =
+        action === "start"
+          ? "button button-primary"
+          : "button button-secondary";
+      button.textContent = label;
+
+      button.addEventListener("click", async () => {
+        setBusy(button, true, "Working...");
+
+        try {
+          await api(`/api/bots/${bot.id}/${action}`, {
+            method: "POST",
+            body: JSON.stringify({})
+          });
+
+          notify(`${label} request sent.`);
+        } catch (error) {
+          notify(error.message);
+        } finally {
+          setBusy(button, false);
+        }
+      });
+
+      actions.append(button);
+    }
+
+    const logsButton = document.createElement("button");
+    logsButton.className = "button button-secondary";
+    logsButton.textContent = "View Logs";
+
+    const logs = document.createElement("pre");
+    logs.className = "logs hidden";
+    logs.textContent = "Logs will appear here.";
+
+    logsButton.addEventListener("click", async () => {
+      logs.classList.remove("hidden");
+      logs.textContent = "Loading logs...";
+
+      try {
+        const data = await api(`/api/bots/${bot.id}/logs`);
+        logs.textContent =
+          typeof data.logs === "string"
+            ? data.logs
+            : JSON.stringify(data.logs, null, 2);
+      } catch (error) {
+        logs.textContent = error.message;
+      }
+    });
+
+    actions.append(logsButton);
+    card.append(top, actions, logs);
+    grid.append(card);
+  }
+}
+
+async function createBot() {
+  const button = $("submitCreate");
+
+  const repoName = $("repoSelect").value;
+  const branch = $("branchInput").value.trim();
+  const serviceName = $("serviceName").value.trim();
+
+  if (!repoName) {
+    notify("Choose a GitHub repository first.");
+    return;
+  }
+
+  if (!branch) {
+    notify("Enter a branch name.");
+    return;
+  }
+
+  setBusy(button, true, "Creating service...");
+
+  try {
+    await api("/api/bots", {
+      method: "POST",
+      body: JSON.stringify({
+        repoName,
+        branch,
+        serviceName: serviceName || undefined
+      })
+    });
+
+    $("createPanel").classList.add("hidden");
+    $("serviceName").value = "";
+
+    await loadBots();
+    notify("Bot service created successfully.");
+  } catch (error) {
+    notify(error.message);
+  } finally {
+    setBusy(button, false);
+  }
+}
+
+async function init() {
+  try {
+    const data = await api("/api/me");
+    showLoggedIn(data.user);
+    await loadBots();
+  } catch {
+    showLoggedOut();
+  }
+}
+
+$("createBtn").addEventListener("click", openCreatePanel);
+$("emptyCreateBtn").addEventListener("click", openCreatePanel);
+
+$("closeCreate").addEventListener("click", () => {
+  $("createPanel").classList.add("hidden");
+});
+
+$("submitCreate").addEventListener("click", createBot);
+
+$("refreshBtn").addEventListener("click", async () => {
+  setBusy($("refreshBtn"), true, "Refreshing...");
+
+  try {
+    await loadBots();
+    notify("Dashboard refreshed.");
+  } catch (error) {
+    notify(error.message);
+  } finally {
+    setBusy($("refreshBtn"), false);
+  }
+});
+
+$("logoutBtn").addEventListener("click", async () => {
+  try {
+    await api("/auth/logout", {
+      method: "POST",
+      body: JSON.stringify({})
+    });
+  } catch (error) {
+    notify(error.message);
+  }
+
+  showLoggedOut();
+  notify("Logged out.");
+});
+
+init();
