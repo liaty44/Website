@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#090711">
+  <title>VorstyAFK | Bot Hosting</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="ambient ambient-one"></div>
+  <div class="ambient ambient-two"></div>
+
+  <header class="topbar">
+    <a class="brand" href="/">
+      <span class="brand-icon">V</span>
+      <span>VORSTY<span class="accent">AFK</span></span>
+    </a>
+    <div class="top-actions">
+      <span class="status"><i></i> PANEL ONLINE</span>
+      <button id="loginBtn" class="button button-primary"
+        onclick="location.href='/auth/github'">
+        Continue with GitHub
+      </button>
+      <button id="logoutBtn" class="button button-secondary hidden">
+        Logout
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <div class="eyebrow"><span></span> YOUR BOTS. YOUR CONTROL.</div>
+      <h1>Welcome to the <span class="gradient-text">Void.</span></h1>
+      <p class="hero-copy">
+        Deploy your Minecraft AFK bots, manage services and inspect logs
+        from one clean dashboard.
+      </p>
+      <div class="hero-actions">
+        <button class="button button-primary" id="heroLogin"
+          onclick="location.href='/auth/github'">
+          Get Started <span>↗</span>
+        </button>
+        <a class="button button-secondary"
+          href="https://discord.gg/QKfdQtPtpN"
+          target="_blank" rel="noopener noreferrer">
+          Join Support Discord
+        </a>
+      </div>
+      <div class="feature-strip">
+        <div><strong>04</strong><span>MAX BOTS / USER</span></div>
+        <div><strong>GitHub</strong><span>REPOSITORY DEPLOY</span></div>
+        <div><strong>Live</strong><span>SERVICE MANAGEMENT</span></div>
+      </div>
+    </section>
+
+    <section id="dashboard" class="dashboard hidden">
+      <div class="section-heading">
+        <div>
+          <div class="eyebrow">CONTROL CENTER</div>
+          <h2>Your dashboard</h2>
+          <p id="welcomeText">Manage your bot services.</p>
+        </div>
+        <button id="createBtn" class="button button-primary">
+          + Create Bot
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span class="stat-label">YOUR BOTS</span>
+          <strong id="botCount">0 / 4</strong>
+          <span class="stat-note">Service slots used</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">ACCOUNT</span>
+          <strong id="accountName">GitHub</strong>
+          <span class="stat-note">Connected account</span>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">SUPPORT</span>
+          <strong>Discord</strong>
+          <a class="stat-note"
+             href="https://discord.gg/QKfdQtPtpN"
+             target="_blank" rel="noopener noreferrer">Get help ↗</a>
+        </article>
+      </div>
+
+      <div id="createPanel" class="panel hidden">
+        <div class="panel-heading">
+          <div>
+            <h3>Create a bot</h3>
+            <p>Choose a repository you can access.</p>
+          </div>
+          <button id="closeCreate" class="icon-button" aria-label="Close">×</button>
+        </div>
+
+        <label for="repoSelect">GitHub repository</label>
+        <select id="repoSelect">
+          <option value="">Loading repositories...</option>
+        </select>
+
+        <label for="branchInput">Branch</label>
+        <input id="branchInput" value="main" maxlength="200"
+          placeholder="main">
+
+        <label for="serviceName">Service name</label>
+        <input id="serviceName" maxlength="50"
+          placeholder="my-afk-bot">
+
+        <p class="help-text">
+          Private repositories may require the appropriate GitHub access.
+          Render service availability and pricing depend on your account.
+        </p>
+        <button id="submitCreate" class="button button-primary full-width">
+          Create Service
+        </button>
+      </div>
+
+      <div class="section-heading bot-heading">
+        <div>
+          <div class="eyebrow">YOUR INFRASTRUCTURE</div>
+          <h2>Bot services</h2>
+        </div>
+        <button id="refreshBtn" class="button button-secondary">
+          ↻ Refresh
+        </button>
+      </div>
+
+      <div id="botsGrid" class="bots-grid"></div>
+      <div id="emptyState" class="empty-state">
+        <div class="empty-icon">◇</div>
+        <h3>No bots deployed yet</h3>
+        <p>Create your first service to see it here.</p>
+        <button id="emptyCreateBtn" class="button button-primary">
+          Create your first bot
+        </button>
+      </div>
+    </section>
+
+    <div id="notice" class="notice hidden" role="status"></div>
+
+    <footer>
+      <span>© 2026 VORSTYAFK</span>
+      <span>Built for the AFK community</span>
+      <a href="https://discord.gg/QKfdQtPtpN"
+         target="_blank" rel="noopener noreferrer">SUPPORT ↗</a>
+    </footer>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+        </html>
